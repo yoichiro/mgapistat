@@ -1,0 +1,9 @@
+%% -*- erlang -*-
+{application, mgapistat,
+ [{description, "mgapistat"},
+  {vsn, "0.1"},
+  {modules, []},
+  {registered, []},
+  {mod, {'mgapistat_app', []}},
+  {env, []},
+  {applications, [kernel, stdlib, crypto]}]}.

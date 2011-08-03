@@ -1,0 +1,102 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    padding: 0;
+    font-family: helvetica,arial,sans-serif;
+    font-size: 90%;
+}
+
+#appLayout {
+    height: 100%;
+}
+
+#leftCol {
+    width: 17em;
+}
+
+.copyright {
+    font-size: 10px;
+    float: right;
+}
+
+.share {
+    float: left;
+}
+
+.claro table.dijitCalendarContainer {
+    font-size: 80%;
+}
+
+br .clear {
+    clear: both;
+}
+
+div .title {
+    float: left;
+    font-size: 16px;
+}
+
+div #progress {
+    float: right;
+    visibility: hidden;
+}
+
+div .headerPanel {
+    width: 100%;
+}
+
+#apiTypePanel {
+    margin-top: 10px;
+}
+
+div .header {
+    font-size: 16px;
+    margin-bottom: 3px;
+}
+
+#autoReloadPanel {
+    margin-top: 10px;
+}
+
+#grid {
+    width: 100%;
+}
+
+.dojoxGridRowTable {
+    font-size: 13px;
+}
+
+.statusGood {
+    color: green;
+}
+
+.statusCaution {
+    color: orange;
+    font-weight: bold;
+}
+
+.statusWarning {
+    color: red;
+    font-weight: bold;
+}
+
+.contentArea {
+    margin-bottom: 10px;
+}
+
+#reloadPanel {
+    margin-top: 10px;
+}
+
+#errorMessage {
+    color: red;
+    font-size: 14px;
+    float: right;
+    margin-right: 10px;
+}
+
+#historyChart {
+    width: 100%;
+    height: 100%;
+}
