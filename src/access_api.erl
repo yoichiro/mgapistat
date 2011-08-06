@@ -35,6 +35,7 @@ get_refresh_token() ->
     binary_to_list(RefreshToken).
 
 get_access_token(RefreshToken) ->
+    ClientSecret = os:getenv("MGAPISTAT_CLIENTSECRET"),
     StartTime = current_time(),
     {ok, {_Info, _Headers, Body}} =
 	httpc:request(
@@ -44,7 +45,7 @@ get_access_token(RefreshToken) ->
 	    "application/x-www-form-urlencoded",
 	    "grant_type=refresh_token"
 	    "&client_id=1593c37a0e1d567dc368"
-	    "&client_secret=e1ee4752d8148f03be4198102e0013f9600ed1a8"
+	    "&client_secret=" ++ ClientSecret ++
 	    "&refresh_token="
 	    ++ RefreshToken
 	   },
