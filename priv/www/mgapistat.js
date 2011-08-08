@@ -217,7 +217,7 @@ mgapistat.SearchResultPane.prototype = {
 	    }
 	    this.myDataStore.newItem({
 		apiType: item.apiType,
-		status: (item.deviation > 70) ? "1" : "0",
+		status: status,
 		latency: item.recentAverage,
 		average: item.average,
 		stdDeviation: item.stdDeviation,
