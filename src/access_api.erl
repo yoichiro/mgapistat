@@ -9,6 +9,10 @@ main() ->
     send_request(AccessToken, 3, "/people/@me/@friends"),
     send_request(AccessToken, 4, "/updates/@me/@friends"),
     send_request(AccessToken, 5, "/voice/statuses/friends_timeline"),
+    send_request(AccessToken, 6, "/photo/albums/@me/@friends"),
+    send_request(AccessToken, 7, "/photo/mediaItems/@me/@friends"),
+    send_request(AccessToken, 8, "/checkins/@me/@friends"),
+    send_request(AccessToken, 9, "/messages/@me/@inbox"),
     cleanup(),
     ok.
 

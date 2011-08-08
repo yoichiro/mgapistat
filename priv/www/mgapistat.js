@@ -8,7 +8,7 @@ dojo.require("dojox.charting.Chart2D");
 dojo.require("dojox.charting.widget.Legend");
 dojo.require("dojox.charting.action2d.Tooltip");
 dojo.require("dojox.charting.action2d.Magnify");
-dojo.require("dojox.charting.themes.Charged");
+dojo.require("dojox.charting.themes.Shrooms");
 dojo.require("dojox.grid.DataGrid");
 dojo.require("dojo.data.ItemFileWriteStore");
 
@@ -68,6 +68,8 @@ mgapistat.SearchConditionPane.prototype = {
         this.setupDatePicker();
         this.setupApiTypes();
 	this.setupAutoReload();
+
+	dojo.connect(dojo.byId("reloadStatuses"), "onclick", this, "notifyCurrentStatusesChanged");
     },
     setupDatePicker: function() {
         var datePicker = new dijit.Calendar({
@@ -77,7 +79,7 @@ mgapistat.SearchConditionPane.prototype = {
     },
     setupApiTypes: function() {
         var self = this;
-        for (var i = 1; i <= 5; i++) {
+        for (var i = 1; i <= 9; i++) {
             new dijit.form.CheckBox({
                 name: "api_type" + i,
                 value: i,
@@ -115,30 +117,44 @@ mgapistat.SearchConditionPane.prototype = {
     onChangeApiType: function(state) {
         this.notifyConditionChanged();
     },
-    notifyConditionChanged: function() {
-        var datePicker = dijit.byId("datePicker");
-        var date = datePicker.value;
+    getSelectedApiTypes: function() {
         var apiTypes = new Array();
-        for (var i = 1; i <= 5; i++) {
+        for (var i = 1; i <= 9; i++) {
             var apiType = dijit.byId("api_type" + i);
             if (apiType.checked) {
                 apiTypes.push(i);
             }
         }
-        dojo.publish("changeCondition", [date, apiTypes]);
+	return apiTypes;
+    },
+    notifyConditionChanged: function() {
+        var datePicker = dijit.byId("datePicker");
+        var date = datePicker.value;
+        var apiTypes = this.getSelectedApiTypes();
+	var tab = this.getSelectedTab();
+	if (tab == "Current") {
+            dojo.publish("changeCurrentStatuses", [apiTypes]);
+	} else if (tab == "History") {
+            dojo.publish("changeCondition", [date, apiTypes]);
+	}
     },
     notifyCurrentStatusesChanged: function() {
-	dojo.publish("changeCurrentStatuses", []);
+	var apiTypes = this.getSelectedApiTypes();
+	dojo.publish("changeCurrentStatuses", [apiTypes]);
+    },
+    getSelectedTab: function(child) {
+	var tabPane = dijit.byId("centerPanel");
+	return tabPane.selectedChildWidget.title;
     },
     onSelectTab: function(child) {
 	if (child.title == "Current") {
 	    dojo.style(dojo.byId("datePicker"), "display", "none");
-	    dojo.style(dojo.byId("apiTypePanel"), "display", "none");
+//	    dojo.style(dojo.byId("apiTypePanel"), "display", "none");
 	    dojo.style(dojo.byId("reloadPanel"), "display", "block");
 	    this.notifyCurrentStatusesChanged();
 	} else if (child.title == "History") {
 	    dojo.style(dojo.byId("datePicker"), "display", "block");
-	    dojo.style(dojo.byId("apiTypePanel"), "display", "block");
+//	    dojo.style(dojo.byId("apiTypePanel"), "display", "block");
 	    dojo.style(dojo.byId("reloadPanel"), "display", "none");
 	    this.notifyConditionChanged();
 	}
@@ -159,10 +175,8 @@ mgapistat.SearchResultPane.prototype = {
         this.setupHistoryChart();
         this.setupGrid();
 	this.setupRecentChart();
-
-	dojo.connect(dojo.byId("reloadStatuses"), "onclick", this, "onChangeCurrentStatuses");
     },
-    loadCurrentStatuses: function() {
+    loadCurrentStatuses: function(apiTypes) {
 	var self = this;
         dojo.publish("changeProgress", [true]);
         dojo.xhrPost({
@@ -172,7 +186,7 @@ mgapistat.SearchResultPane.prototype = {
                 "Content-Type": "application/x-www-form-urlencoded; charset=utf-8"
             },
             postData: dojo.objectToQuery({
-                apiTypes: "1,2,3,4,5"
+                apiTypes: apiTypes.join(",")
             }),
             load: dojo.hitch(self, dojo.hitch(self, function(response) {
                 this.renderCurrentStatuses(response);
@@ -211,9 +225,9 @@ mgapistat.SearchResultPane.prototype = {
 	    });
 	}));
     },
-    onChangeCurrentStatuses: function() {
-	this.loadCurrentStatuses();
-	this.loadRecentLatency();
+    onChangeCurrentStatuses: function(apiTypes) {
+	this.loadCurrentStatuses(apiTypes);
+	this.loadRecentLatency(apiTypes);
     },
     setupGrid: function() {
         this.myDataStore = new dojo.data.ItemFileWriteStore({
@@ -221,18 +235,6 @@ mgapistat.SearchResultPane.prototype = {
             ]}
         });
         var layout = [
-            {field: "apiType", name: "API type", width: "auto",
-                formatter: function(value) {
-                    switch(value) {
-                        case "1": return "Refresn an access token";
-                        case "2": return "people/@me/@self";
-                        case "3": return "people/@me/@friends";
-                        case "4": return "updates/@me/@friends";
-                        case "5": return "voice/statuses/friends_timeline";
-                        default: return "";
-                    }
-                }
-            },
             {field: "status", name: "Status", width: "80px",
                 formatter: function(value) {
                     switch(value) {
@@ -243,9 +245,25 @@ mgapistat.SearchResultPane.prototype = {
                     }
                 }
             },
-	    {field: "deviation", name: "Deviation", width: "130px"},
-            {field: "latency", name: "Recent latency (30min)", width: "auto"},
-            {field: "average", name: "Average latency (all)", width: "auto"}
+            {field: "apiType", name: "API type", width: "auto",
+                formatter: function(value) {
+                    switch(value) {
+                        case "1": return "Refresh an access token";
+                        case "2": return "people/@me/@self";
+                        case "3": return "people/@me/@friends";
+                        case "4": return "updates/@me/@friends";
+                        case "5": return "voice/statuses/friends_timeline";
+			case "6": return "photo/albums/@me/@friends";
+			case "7": return "photo/mediaItems/@me/@friends";
+			case "8": return "checkins/@me/@friends";
+			case "9": return "messages/@me/@inbox";
+                        default: return "";
+                    }
+                }
+            },
+	    {field: "deviation", name: "Deviation", width: "100px"},
+            {field: "latency", name: "Recent latency", width: "160px"},
+            {field: "average", name: "Average latency", width: "170px"}
 //            {field: "stdDeviation", name: "Std. deviation", width: "auto"}
         ];
         var grid = new dojox.grid.DataGrid({
@@ -263,7 +281,7 @@ mgapistat.SearchResultPane.prototype = {
     },
     setupHistoryChart: function() {
         this.historyChart = new dojox.charting.Chart2D("historyChart");
-        this.historyChart.setTheme(dojox.charting.themes.Charged);
+        this.historyChart.setTheme(dojox.charting.themes.Shrooms);
         this.historyChart.addPlot("default", {
             type: "Lines",
             markers: true
@@ -273,7 +291,7 @@ mgapistat.SearchResultPane.prototype = {
         var tip = new dojox.charting.action2d.Tooltip(this.historyChart, "default");
         var mag = new dojox.charting.action2d.Magnify(this.historyChart, "default");
 //        this.historyChart.render();
-	this.historyChart.resize(700, 250);
+	this.historyChart.resize(700, 300);
         this.historyLegend = new dojox.charting.widget.Legend({ chart: this.historyChart }, "historyLegend");
 	this.historyChart.connectToPlot("default", dojo.hitch(this, function(evt) {
 	    console.log(evt.type);
@@ -282,10 +300,14 @@ mgapistat.SearchResultPane.prototype = {
     renderHistoryChart: function(response) {
         var apiTypes = [
             {apiType: "1", legend: "1:Refresh token"},
-            {apiType: "2", legend: "2:People(@me)"},
-            {apiType: "3", legend: "3:People(@friends)"},
+            {apiType: "2", legend: "2:People (@me)"},
+            {apiType: "3", legend: "3:People (@friends)"},
 	    {apiType: "4", legend: "4:Updates"},
-	    {apiType: "5", legend: "5:Voice"}
+	    {apiType: "5", legend: "5:Voice"},
+	    {apiType: "6", legend: "6:Albums"},
+	    {apiType: "7", legend: "7:MediaItems"},
+	    {apiType: "8", legend: "8:Check-ins"},
+	    {apiType: "9", legend: "9:Messages"}
         ];
         var result = response.result;
         dojo.forEach(apiTypes, dojo.hitch(this, function(item) {
@@ -311,12 +333,12 @@ mgapistat.SearchResultPane.prototype = {
                 this.historyChart.removeSeries(item.legend);
             }
         }));
-        this.historyChart.resize(700, 250);
+        this.historyChart.resize(700, 300);
         this.historyLegend.refresh();
     },
     setupRecentChart: function() {
         this.recentChart = new dojox.charting.Chart2D("recentChart");
-        this.recentChart.setTheme(dojox.charting.themes.Charged);
+        this.recentChart.setTheme(dojox.charting.themes.Shrooms);
         this.recentChart.addPlot("default", {
             type: "Lines",
             markers: true
@@ -326,7 +348,7 @@ mgapistat.SearchResultPane.prototype = {
         var tip = new dojox.charting.action2d.Tooltip(this.recentChart, "default");
         var mag = new dojox.charting.action2d.Magnify(this.recentChart, "default");
 //        this.recentChart.render();
-	this.recentChart.resize(700, 250);
+	this.recentChart.resize(700, 300);
         this.recentLegend = new dojox.charting.widget.Legend({ chart: this.recentChart }, "recentLegend");
 	this.recentChart.connectToPlot("default", dojo.hitch(this, function(evt) {
 	    console.log(evt.type);
@@ -335,10 +357,14 @@ mgapistat.SearchResultPane.prototype = {
     renderRecentChart: function(response) {
         var apiTypes = [
             {apiType: "1", legend: "1:Refresh token"},
-            {apiType: "2", legend: "2:People(@me)"},
-            {apiType: "3", legend: "3:People(@friends)"},
+            {apiType: "2", legend: "2:People (@me)"},
+            {apiType: "3", legend: "3:People (@friends)"},
 	    {apiType: "4", legend: "4:Updates"},
-	    {apiType: "5", legend: "5:Voice"}
+	    {apiType: "5", legend: "5:Voice"},
+	    {apiType: "6", legend: "6:Albums"},
+	    {apiType: "7", legend: "7:MediaItems"},
+	    {apiType: "8", legend: "8:Check-ins"},
+	    {apiType: "9", legend: "9:Messages"}
         ];
         var result = response.result;
         dojo.forEach(apiTypes, dojo.hitch(this, function(item) {
@@ -364,10 +390,10 @@ mgapistat.SearchResultPane.prototype = {
                 this.recentChart.removeSeries(item.legend);
             }
         }));
-        this.recentChart.resize(700, 250);
+        this.recentChart.resize(700, 300);
         this.recentLegend.refresh();
     },
-    loadRecentLatency: function() {
+    loadRecentLatency: function(apiTypes) {
 	var self = this;
         dojo.publish("changeProgress", [true]);
         dojo.xhrPost({
@@ -377,7 +403,7 @@ mgapistat.SearchResultPane.prototype = {
                 "Content-Type": "application/x-www-form-urlencoded; charset=utf-8"
             },
             postData: dojo.objectToQuery({
-                apiTypes: "1,2,3,4,5"
+                apiTypes: apiTypes.join(",")
             }),
             load: dojo.hitch(self, dojo.hitch(self, function(response) {
                 this.renderRecentChart(response);
@@ -390,6 +416,9 @@ mgapistat.SearchResultPane.prototype = {
 	});
     },
     onChangeCondition: function(date, apiTypes) {
+	this.loadHistories(date, apiTypes);
+    },
+    loadHistories: function(date, apiTypes) {
         var self = this;
         dojo.publish("changeProgress", [true]);
         var selectedDate = dojo.date.locale.format(date, {
@@ -419,9 +448,9 @@ mgapistat.SearchResultPane.prototype = {
     },
     onSelectTab: function(child) {
 	if (child.title == "History") {
-	    this.historyChart.resize(700, 250);
+	    this.historyChart.resize(700, 300);
 	} else if (child.title == "Current") {
-	    this.recentChart.resize(700, 250);
+	    this.recentChart.resize(700, 300);
 	}
     }
 };
