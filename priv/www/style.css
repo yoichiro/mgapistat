@@ -53,6 +53,7 @@ div .headerPanel {
 div .header {
     font-size: 16px;
     margin-bottom: 3px;
+    text-decoration: underline;
 }
 
 #autoReloadPanel {
@@ -99,4 +100,16 @@ div .header {
 #historyChart {
     width: 100%;
     height: 100%;
+}
+
+#recentLatencySpanPanel {
+    margin-top: 10px;
+}
+
+.dojoxLegendText {
+    font-size: 11px;
+}
+
+#historyTypePanel {
+    margin-top: 10px;
 }

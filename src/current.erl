@@ -9,10 +9,7 @@ execute(Pid, Params) ->
     lists:foreach(fun(ApiType) ->
 			  spawn_link(fun() -> get_current_status(Self, binary_to_list(ApiType)) end)
 		  end, ApiTypeList),
-    ResultList = receive_results(length(ApiTypeList), []),
-%%    ResultList = lists:map(fun(ApiType) ->
-%%				      {ApiType, get_current_status(binary_to_list(ApiType))}
-%%			      end, ApiTypeList),
+    ResultList = utils:receive_results(length(ApiTypeList), []),
     Sorted = lists:map(fun(A) ->
 			       element(2, A)
 		       end, lists:sort(fun(A, B) ->
@@ -43,20 +40,9 @@ get_current_status(ApiType) ->
     {struct,
      [
       {apiType, list_to_binary(ApiType)},
-      {recentAverage, round_value(RecentAverage)},
-      {average, round_value(Average)},
-      {stdDeviation, round_value(StdDeviation)},
-      {deviation, round_value(Deviation)}
+      {recentAverage, utils:round_value(RecentAverage)},
+      {average, utils:round_value(Average)},
+      {stdDeviation, utils:round_value(StdDeviation)},
+      {deviation, utils:round_value(Deviation)}
      ]
     }.
-
-receive_results(Length, ResultList) when length(ResultList) == Length ->
-    ResultList;
-receive_results(Length, ResultList) ->
-    receive
-	{_Pid, ApiType, Result} ->
-	    receive_results(Length, [{ApiType, Result} | ResultList])
-    end.
-
-round_value(Value) ->
-    round(Value * 1000) / 1000.

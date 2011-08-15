@@ -5,10 +5,19 @@ execute(Pid, Params) ->
     Date = proplists:get_value("date", Params),
     ApiTypes = proplists:get_value("apiTypes", Params),
     ApiTypeList = re:split(ApiTypes, ","),
+    HistoryType = proplists:get_value("historyType", Params),
+    load_and_response(Pid, Date, ApiTypeList, HistoryType).
 
+load_and_response(Pid, _, _, HistoryType)
+  when HistoryType /= "avg", HistoryType /= "max" ->
+    Pid ! {self(),
+           400,
+           {struct, []}
+          };    
+load_and_response(Pid, Date, ApiTypeList, HistoryType) ->
     Map = lists:map(
             fun(ApiType) ->
-                    mysql:prepare(test, <<"SELECT HOUR(access_time), AVG(latency) FROM histories WHERE api_type = ? AND DATE(access_time) = ? GROUP BY HOUR(access_time)">>),
+                    mysql:prepare(test, list_to_binary("SELECT HOUR(access_time), " ++ HistoryType ++ "(latency) FROM histories WHERE api_type = ? AND DATE(access_time) = ? GROUP BY HOUR(access_time)")),
                     {data, Result} = mysql:execute(mysql, test, [ApiType, list_to_binary(Date)]),
                     Rows = mysql:get_result_rows(Result),
                     {binary_to_list(ApiType), Rows}
@@ -17,7 +26,7 @@ execute(Pid, Params) ->
 
     Response = lists:map(
                  fun({ApiType, Rows}) ->
-                         {Labels, Values} = divide_label_value(Rows),
+                         {Labels, Values} = utils:divide_label_value(Rows),
                          {list_to_atom(ApiType),
                           {struct, [
                                     {labels, Labels},
@@ -29,14 +38,5 @@ execute(Pid, Params) ->
 
     Pid ! {self(),
            200,
-           {struct, [{code, 200}, {result, {struct, Response}}]}
+           {struct, [{result, {struct, Response}}]}
           }.
-
-divide_label_value(List) ->
-    divide_label_value(List, [], []).
-
-divide_label_value([Head | List], Labels, Values) ->
-    [Label, Value] = Head,
-    divide_label_value(List, [Label | Labels], [Value | Values]);
-divide_label_value([], Labels, Values) ->
-    {lists:reverse(Labels), lists:reverse(Values)}.
