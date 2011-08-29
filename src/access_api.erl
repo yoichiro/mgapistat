@@ -3,6 +3,8 @@
 
 main() ->
     initialize(),
+    FbAccessToken = get_fb_access_token(),
+    send_fb_request(FbAccessToken),
     RefreshToken = get_refresh_token(),
     AccessToken = get_access_token(RefreshToken),
     send_request(AccessToken, 2, "/people/@me/@self"),
@@ -33,8 +35,14 @@ cleanup() ->
     ok.
 
 get_refresh_token() ->
-    mysql:prepare(ps1, <<"SELECT refresh_token FROM token">>),
-    {data, Result} = mysql:execute(mysql, ps1, []),
+    mysql:prepare(ps1, <<"SELECT refresh_token FROM token WHERE service_name = ?">>),
+    {data, Result} = mysql:execute(mysql, ps1, ["mixi"]),
+    [[RefreshToken | _] | _] = mysql:get_result_rows(Result),
+    binary_to_list(RefreshToken).
+
+get_fb_access_token() ->
+    mysql:prepare(ps3, <<"SELECT refresh_token FROM token WHERE service_name = ?">>),
+    {data, Result} = mysql:execute(mysql, ps3, ["facebook"]),
     [[RefreshToken | _] | _] = mysql:get_result_rows(Result),
     binary_to_list(RefreshToken).
 
@@ -68,6 +76,15 @@ send_request(AccessToken, ApiType, PathInfo) ->
 			[{"Authorization", "OAuth " ++ AccessToken}]},
 		      [], []),
     output_access_log(ApiType, StartTime, current_time(), 1, 200, "").
+
+send_fb_request(AccessToken) ->
+    StartTime = current_time(),
+    {ok, {{_, Status, _}, Headers, Body}} =
+	httpc:request(get, {
+			"https://graph.facebook.com/me?access_token" ++ AccessToken,
+			[{}]},
+		      [], []),
+    output_access_log(10, StartTime, current_time(), 1, 200, "").
 
 output_access_log(ApiType, StartTime, EndTime,
 		  Succeed, HttpStatus, ErrorMessage) ->

@@ -1,0 +1,14 @@
+dojo.require("dijit.layout.BorderContainer");
+dojo.require("dijit.layout.TabContainer");
+dojo.require("dijit.layout.ContentPane");
+dojo.require("dijit.dijit");
+dojo.require("dijit.Calendar");
+dojo.require("dijit.form.CheckBox");
+dojo.require("dijit.form.RadioButton");
+dojo.require("dojox.charting.Chart2D");
+dojo.require("dojox.charting.widget.Legend");
+dojo.require("dojox.charting.action2d.Tooltip");
+dojo.require("dojox.charting.action2d.Magnify");
+dojo.require("dojox.charting.themes.Shrooms");
+dojo.require("dojox.grid.DataGrid");
+dojo.require("dojo.data.ItemFileWriteStore");
